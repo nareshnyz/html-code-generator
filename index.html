@@ -316,7 +316,7 @@
     color:var(--muted);
     font-family:var(--mono);
   }
-  pre#output{
+  pre#output, pre#imgOutput{
     background:var(--panel-2);
     border:1px solid var(--border);
     border-radius:7px;
@@ -406,6 +406,129 @@
   }
   .mode-toggle .dot.spin{ animation:spinSwap .5s ease; }
   .mode-toggle:hover{ border-color:var(--accent-2); }
+
+  /* ---- image panel ---- */
+  .img-layout{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  .img-preview-col{
+    flex:1 1 260px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+  }
+  .img-drop{
+    width:100%;
+    min-height:220px;
+    border:2px dashed var(--border);
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--panel-2);
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    transition:border-color .25s ease, background .25s ease;
+  }
+  .img-drop:hover, .img-drop.dragover{
+    border-color:var(--accent-2);
+  }
+  .img-drop .placeholder{
+    color:var(--muted);
+    font-size:0.85rem;
+    text-align:center;
+    padding:20px;
+  }
+  .img-drop canvas{
+    max-width:100%;
+    max-height:320px;
+    display:none;
+  }
+  .img-drop.has-image canvas{ display:block; }
+  .img-drop.has-image .placeholder{ display:none; }
+  .img-toolbar{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .img-toolbar button{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:0.8rem;
+    cursor:pointer;
+  }
+  .img-toolbar button:hover{ border-color:var(--accent-2); color:var(--accent-2); }
+
+  .img-controls-col{
+    flex:1 1 260px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .slider-field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .slider-field .slider-head{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.78rem;
+    color:var(--muted);
+  }
+  .slider-field .slider-head span.val{
+    font-family:var(--mono);
+    color:var(--text);
+  }
+  input[type="range"]{
+    width:100%;
+    accent-color:var(--accent);
+  }
+  .toggle-row{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .toggle-chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:0.8rem;
+    color:var(--text);
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 12px;
+    cursor:pointer;
+  }
+  .toggle-chip input{ accent-color:var(--accent); }
+  .size-row{
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+  }
+  .size-row .field{ flex:1; }
+  .size-row .lock-btn{
+    flex:0 0 auto;
+    height:38px;
+    width:38px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    cursor:pointer;
+    color:var(--muted);
+    font-size:0.9rem;
+  }
+  .size-row .lock-btn.locked{ color:var(--accent); border-color:var(--accent); }
+  #imgFileInput{ display:none; }
 </style>
 </head>
 <body>
@@ -547,6 +670,94 @@
       <span class="count" id="lineCount">0 elements generated</span>
     </div>
     <pre id="output">&lt;!-- Your generated HTML will appear here --&gt;</pre>
+  </div>
+
+  <div class="panel">
+    <div class="output-head">
+      <h2>Image import &amp; edit</h2>
+      <span class="count" id="imgDims">No image imported</span>
+    </div>
+
+    <div class="img-layout">
+      <div class="img-preview-col">
+        <div class="img-drop" id="imgDrop">
+          <div class="placeholder">Click to import an image<br>or drag &amp; drop it here</div>
+          <canvas id="imgCanvas"></canvas>
+        </div>
+        <input type="file" id="imgFileInput" accept="image/*">
+        <div class="img-toolbar">
+          <button type="button" id="rotateLeft">⟲ Rotate L</button>
+          <button type="button" id="rotateRight">⟳ Rotate R</button>
+          <button type="button" id="flipH">⇋ Flip H</button>
+          <button type="button" id="flipV">⇵ Flip V</button>
+          <button type="button" id="resetImg">Reset</button>
+        </div>
+      </div>
+
+      <div class="img-controls-col">
+        <div class="slider-field">
+          <div class="slider-head"><span>Brightness</span><span class="val" id="valBrightness">100%</span></div>
+          <input type="range" id="brightness" min="0" max="200" value="100">
+        </div>
+        <div class="slider-field">
+          <div class="slider-head"><span>Contrast</span><span class="val" id="valContrast">100%</span></div>
+          <input type="range" id="contrast" min="0" max="200" value="100">
+        </div>
+        <div class="slider-field">
+          <div class="slider-head"><span>Saturation</span><span class="val" id="valSaturate">100%</span></div>
+          <input type="range" id="saturate" min="0" max="200" value="100">
+        </div>
+        <div class="slider-field">
+          <div class="slider-head"><span>Blur</span><span class="val" id="valBlur">0px</span></div>
+          <input type="range" id="blur" min="0" max="10" value="0">
+        </div>
+
+        <div class="toggle-row">
+          <label class="toggle-chip"><input type="checkbox" id="grayscaleToggle"> Grayscale</label>
+          <label class="toggle-chip"><input type="checkbox" id="sepiaToggle"> Sepia</label>
+          <label class="toggle-chip"><input type="checkbox" id="invertToggle"> Invert</label>
+        </div>
+
+        <div class="size-row">
+          <div class="field">
+            <label for="imgWidth">Width (px)</label>
+            <input type="text" id="imgWidth" placeholder="width">
+          </div>
+          <div class="field">
+            <label for="imgHeight">Height (px)</label>
+            <input type="text" id="imgHeight" placeholder="height">
+          </div>
+          <button type="button" class="lock-btn locked" id="lockRatio" title="Lock aspect ratio">🔗</button>
+        </div>
+
+        <div class="row" style="margin-bottom:0;">
+          <div class="field">
+            <label for="imgAlt">Alt text</label>
+            <input type="text" id="imgAlt" placeholder="Description for accessibility">
+          </div>
+          <div class="field">
+            <label for="imgClass">CSS class</label>
+            <input type="text" id="imgClass" placeholder="e.g. rounded shadow">
+          </div>
+          <div class="field" style="flex:0 0 120px;">
+            <label for="imgFormat">Export as</label>
+            <select id="imgFormat">
+              <option value="image/png">PNG</option>
+              <option value="image/jpeg">JPEG</option>
+              <option value="image/webp">WEBP</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="generateImgBtn">Generate &lt;img&gt; code</button>
+          <button class="secondary" id="copyImgBtn">Copy code</button>
+          <span class="copied-msg" id="imgCopiedMsg">Copied!</span>
+        </div>
+      </div>
+    </div>
+
+    <pre id="imgOutput" style="margin-top:16px; display:none;"></pre>
   </div>
 
   <footer>Runs entirely in your browser — nothing is uploaded.</footer>
@@ -781,6 +992,201 @@
     const saved = localStorage.getItem('htmlgen-color');
     if (saved) applyColor(saved);
   } catch(e) {}
+
+  // ---- image import & edit ----
+  const imgDrop = document.getElementById('imgDrop');
+  const imgFileInput = document.getElementById('imgFileInput');
+  const imgCanvas = document.getElementById('imgCanvas');
+  const imgCtx = imgCanvas.getContext('2d');
+  const imgDims = document.getElementById('imgDims');
+  const brightness = document.getElementById('brightness');
+  const contrast = document.getElementById('contrast');
+  const saturate = document.getElementById('saturate');
+  const blur = document.getElementById('blur');
+  const valBrightness = document.getElementById('valBrightness');
+  const valContrast = document.getElementById('valContrast');
+  const valSaturate = document.getElementById('valSaturate');
+  const valBlur = document.getElementById('valBlur');
+  const grayscaleToggle = document.getElementById('grayscaleToggle');
+  const sepiaToggle = document.getElementById('sepiaToggle');
+  const invertToggle = document.getElementById('invertToggle');
+  const imgWidthInput = document.getElementById('imgWidth');
+  const imgHeightInput = document.getElementById('imgHeight');
+  const lockRatio = document.getElementById('lockRatio');
+  const imgAlt = document.getElementById('imgAlt');
+  const imgClass = document.getElementById('imgClass');
+  const imgFormat = document.getElementById('imgFormat');
+  const generateImgBtn = document.getElementById('generateImgBtn');
+  const copyImgBtn = document.getElementById('copyImgBtn');
+  const imgOutput = document.getElementById('imgOutput');
+  const imgCopiedMsg = document.getElementById('imgCopiedMsg');
+
+  let originalImg = null;     // the loaded HTMLImageElement
+  let baseW = 0, baseH = 0;   // natural size
+  let rotation = 0;           // 0, 90, 180, 270
+  let flipHorizontal = false;
+  let flipVertical = false;
+  let ratioLocked = true;
+  let aspectRatio = 1;
+
+  function currentFilterString(){
+    const parts = [
+      `brightness(${brightness.value}%)`,
+      `contrast(${contrast.value}%)`,
+      `saturate(${saturate.value}%)`,
+      `blur(${blur.value}px)`
+    ];
+    if (grayscaleToggle.checked) parts.push('grayscale(1)');
+    if (sepiaToggle.checked) parts.push('sepia(1)');
+    if (invertToggle.checked) parts.push('invert(1)');
+    return parts.join(' ');
+  }
+
+  function redrawCanvas(){
+    if (!originalImg) return;
+    const w = parseInt(imgWidthInput.value, 10) || baseW;
+    const h = parseInt(imgHeightInput.value, 10) || baseH;
+
+    const rotated90 = (rotation === 90 || rotation === 270);
+    imgCanvas.width = rotated90 ? h : w;
+    imgCanvas.height = rotated90 ? w : h;
+
+    imgCtx.save();
+    imgCtx.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
+    imgCtx.filter = currentFilterString();
+
+    imgCtx.translate(imgCanvas.width / 2, imgCanvas.height / 2);
+    imgCtx.rotate((rotation * Math.PI) / 180);
+    imgCtx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+    imgCtx.drawImage(originalImg, -w / 2, -h / 2, w, h);
+    imgCtx.restore();
+
+    imgDims.textContent = `${w} × ${h}px${rotation ? `, rotated ${rotation}°` : ''}`;
+  }
+
+  function loadImageFile(file){
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        originalImg = img;
+        baseW = img.naturalWidth;
+        baseH = img.naturalHeight;
+        aspectRatio = baseW / baseH;
+        rotation = 0;
+        flipHorizontal = false;
+        flipVertical = false;
+        imgWidthInput.value = baseW;
+        imgHeightInput.value = baseH;
+        imgDrop.classList.add('has-image');
+        redrawCanvas();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  imgDrop.addEventListener('click', () => imgFileInput.click());
+  imgFileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) loadImageFile(e.target.files[0]);
+  });
+  ['dragover','dragenter'].forEach(evt => {
+    imgDrop.addEventListener(evt, (e) => { e.preventDefault(); imgDrop.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(evt => {
+    imgDrop.addEventListener(evt, (e) => { e.preventDefault(); imgDrop.classList.remove('dragover'); });
+  });
+  imgDrop.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) loadImageFile(e.dataTransfer.files[0]);
+  });
+
+  [brightness, contrast, saturate, blur, grayscaleToggle, sepiaToggle, invertToggle].forEach(el => {
+    el.addEventListener('input', () => {
+      valBrightness.textContent = brightness.value + '%';
+      valContrast.textContent = contrast.value + '%';
+      valSaturate.textContent = saturate.value + '%';
+      valBlur.textContent = blur.value + 'px';
+      redrawCanvas();
+    });
+  });
+
+  document.getElementById('rotateLeft').addEventListener('click', () => {
+    rotation = (rotation + 270) % 360;
+    redrawCanvas();
+  });
+  document.getElementById('rotateRight').addEventListener('click', () => {
+    rotation = (rotation + 90) % 360;
+    redrawCanvas();
+  });
+  document.getElementById('flipH').addEventListener('click', () => {
+    flipHorizontal = !flipHorizontal;
+    redrawCanvas();
+  });
+  document.getElementById('flipV').addEventListener('click', () => {
+    flipVertical = !flipVertical;
+    redrawCanvas();
+  });
+  document.getElementById('resetImg').addEventListener('click', () => {
+    if (!originalImg) return;
+    rotation = 0; flipHorizontal = false; flipVertical = false;
+    brightness.value = 100; contrast.value = 100; saturate.value = 100; blur.value = 0;
+    grayscaleToggle.checked = false; sepiaToggle.checked = false; invertToggle.checked = false;
+    imgWidthInput.value = baseW; imgHeightInput.value = baseH;
+    valBrightness.textContent = '100%'; valContrast.textContent = '100%';
+    valSaturate.textContent = '100%'; valBlur.textContent = '0px';
+    redrawCanvas();
+  });
+
+  lockRatio.addEventListener('click', () => {
+    ratioLocked = !ratioLocked;
+    lockRatio.classList.toggle('locked', ratioLocked);
+    if (ratioLocked && baseW) aspectRatio = (parseInt(imgWidthInput.value,10) || baseW) / (parseInt(imgHeightInput.value,10) || baseH);
+  });
+  imgWidthInput.addEventListener('input', () => {
+    if (ratioLocked && aspectRatio) {
+      const w = parseInt(imgWidthInput.value, 10);
+      if (w) imgHeightInput.value = Math.round(w / aspectRatio);
+    }
+    redrawCanvas();
+  });
+  imgHeightInput.addEventListener('input', () => {
+    if (ratioLocked && aspectRatio) {
+      const h = parseInt(imgHeightInput.value, 10);
+      if (h) imgWidthInput.value = Math.round(h * aspectRatio);
+    }
+    redrawCanvas();
+  });
+
+  generateImgBtn.addEventListener('click', () => {
+    if (!originalImg) {
+      imgOutput.style.display = 'block';
+      imgOutput.innerHTML = escapeHtml('<!-- Import an image first. -->');
+      return;
+    }
+    const format = imgFormat.value;
+    const quality = format === 'image/png' ? undefined : 0.92;
+    const dataUrl = imgCanvas.toDataURL(format, quality);
+    const attrs = [{ name:'src', value: dataUrl }];
+    if (imgAlt.value.trim()) attrs.push({ name:'alt', value: imgAlt.value.trim() });
+    attrs.push({ name:'width', value: String(imgCanvas.width) });
+    attrs.push({ name:'height', value: String(imgCanvas.height) });
+    if (imgClass.value.trim()) attrs.push({ name:'class', value: imgClass.value.trim() });
+
+    const codeText = buildTag('img', '', attrs);
+    imgOutput.dataset.plain = codeText;
+    imgOutput.style.display = 'block';
+    imgOutput.innerHTML = highlightHtml(escapeHtml(codeText));
+  });
+
+  copyImgBtn.addEventListener('click', () => {
+    const text = imgOutput.dataset.plain || '';
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      imgCopiedMsg.classList.add('show');
+      setTimeout(() => imgCopiedMsg.classList.remove('show'), 1400);
+    }).catch(() => {});
+  });
 })();
 </script>
 </body>
