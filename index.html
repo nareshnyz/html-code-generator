@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en" data-color="midnight">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML Code Generator</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#161922;
+    --panel-2:#1d212c;
+    --border:#2a2f3b;
+    --text:#e7e9ee;
+    --muted:#8b91a1;
+    --accent:#5eead4;
+    --accent-2:#7dd3fc;
+    --danger:#f87171;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#f5f6f8;
+      --panel:#ffffff;
+      --panel-2:#f0f1f4;
+      --border:#dde0e6;
+      --text:#171a21;
+      --muted:#5b6272;
+      --accent:#0d9488;
+      --accent-2:#0284c7;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --panel-2:#f0f1f4;
+    --border:#dde0e6;
+    --text:#171a21;
+    --muted:#5b6272;
+    --accent:#0d9488;
+    --accent-2:#0284c7;
+  }
+
+  /* ---- color themes (independent of light/dark) ---- */
+  :root[data-color="midnight"]{
+    --bg:#0f1115; --panel:#161922; --panel-2:#1d212c; --border:#2a2f3b;
+    --text:#e7e9ee; --muted:#8b91a1; --accent:#5eead4; --accent-2:#7dd3fc;
+    --grad-a:#0f1115; --grad-b:#161c2e; --grad-c:#0f1115;
+  }
+  :root[data-color="ocean"]{
+    --bg:#081b25; --panel:#0e2733; --panel-2:#123240; --border:#1c4a5c;
+    --text:#e7f6fb; --muted:#8fb8c6; --accent:#38bdf8; --accent-2:#22d3ee;
+    --grad-a:#071c26; --grad-b:#0b3346; --grad-c:#071c26;
+  }
+  :root[data-color="sunset"]{
+    --bg:#1c1210; --panel:#291a17; --panel-2:#33201c; --border:#4a2c25;
+    --text:#fdece3; --muted:#c8a494; --accent:#fb923c; --accent-2:#f87171;
+    --grad-a:#1c1210; --grad-b:#3a1f17; --grad-c:#1c1210;
+  }
+  :root[data-color="forest"]{
+    --bg:#0e1712; --panel:#15221b; --panel-2:#1a2a21; --border:#2b4436;
+    --text:#e6f2ea; --muted:#9bb8a8; --accent:#4ade80; --accent-2:#a3e635;
+    --grad-a:#0e1712; --grad-b:#17291f; --grad-c:#0e1712;
+  }
+  :root[data-color="candy"]{
+    --bg:#160f1c; --panel:#20152a; --panel-2:#271933; --border:#3d2850;
+    --text:#f3e8ff; --muted:#b9a3d4; --accent:#e879f9; --accent-2:#a78bfa;
+    --grad-a:#160f1c; --grad-b:#2a1638; --grad-c:#160f1c;
+  }
+  :root[data-color="paper"]{
+    --bg:#f7f5f0; --panel:#ffffff; --panel-2:#f0ede4; --border:#ddd6c5;
+    --text:#26231c; --muted:#6b6552; --accent:#b45309; --accent-2:#0e7490;
+    --grad-a:#f7f5f0; --grad-b:#efe8d8; --grad-c:#f7f5f0;
+  }
+
+  /* smooth animated transition whenever theme variables change */
+  *{
+    transition: background-color .45s cubic-bezier(.4,0,.2,1),
+                border-color .45s cubic-bezier(.4,0,.2,1),
+                color .45s cubic-bezier(.4,0,.2,1),
+                box-shadow .45s cubic-bezier(.4,0,.2,1);
+  }
+
+  @keyframes gradientShift{
+    0%{ background-position:0% 50%; }
+    50%{ background-position:100% 50%; }
+    100%{ background-position:0% 50%; }
+  }
+  @keyframes floatBlob{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    33%{ transform:translate(24px,-18px) scale(1.06); }
+    66%{ transform:translate(-18px,14px) scale(0.96); }
+  }
+  @keyframes fadeSlideUp{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes popIn{
+    0%{ transform:scale(0.85); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  @keyframes spinSwap{
+    0%{ transform:rotate(0deg) scale(1); }
+    50%{ transform:rotate(160deg) scale(0.8); }
+    100%{ transform:rotate(360deg) scale(1); }
+  }
+
+  *{ box-sizing:border-box; }
+  html{ background:var(--bg); }
+  body{
+    margin:0;
+    position:relative;
+    background:linear-gradient(120deg, var(--grad-a,var(--bg)), var(--grad-b,var(--bg)), var(--grad-c,var(--bg)));
+    background-size:220% 220%;
+    animation:gradientShift 18s ease infinite;
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:32px 20px 60px;
+    overflow-x:hidden;
+  }
+  .blob{
+    position:fixed;
+    border-radius:50%;
+    filter:blur(70px);
+    opacity:.28;
+    z-index:0;
+    pointer-events:none;
+    transition:background .6s ease;
+  }
+  .blob-a{
+    width:340px; height:340px; top:-80px; left:-60px;
+    background:var(--accent);
+    animation:floatBlob 16s ease-in-out infinite;
+  }
+  .blob-b{
+    width:300px; height:300px; bottom:-60px; right:-40px;
+    background:var(--accent-2);
+    animation:floatBlob 20s ease-in-out infinite reverse;
+  }
+  .wrap{
+    max-width:920px;
+    margin:0 auto;
+    position:relative;
+    z-index:1;
+  }
+  .wrap .panel{
+    animation:fadeSlideUp .5s ease both;
+  }
+  .wrap .panel:nth-of-type(2){ animation-delay:.06s; }
+  .wrap .panel:nth-of-type(3){ animation-delay:.12s; }
+  header{
+    margin-bottom:28px;
+  }
+  header h1{
+    font-size:1.5rem;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:0.92rem;
+    max-width:60ch;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:18px;
+  }
+
+  .row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .field{
+    flex:1 1 200px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field label{
+    font-size:0.78rem;
+    color:var(--muted);
+    font-weight:600;
+  }
+  select, input[type="text"], textarea{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:7px;
+    padding:9px 11px;
+    font-size:0.92rem;
+    font-family:var(--sans);
+    outline:none;
+  }
+  select:focus, input[type="text"]:focus, textarea:focus{
+    border-color:var(--accent-2);
+  }
+  textarea{
+    font-family:var(--mono);
+    font-size:0.87rem;
+    line-height:1.5;
+    resize:vertical;
+    width:100%;
+  }
+  #sourceText{ min-height:150px; }
+
+  .attr-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .attr-row input{ flex:1; }
+  .attr-row button{
+    flex:0 0 auto;
+  }
+  .icon-btn{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--muted);
+    border-radius:7px;
+    width:34px;
+    cursor:pointer;
+    font-size:0.95rem;
+  }
+  .icon-btn:hover{ color:var(--danger); border-color:var(--danger); }
+
+  .contain-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:10px 12px;
+  }
+  .contain-box input[type="checkbox"]{
+    width:16px; height:16px; accent-color:var(--accent);
+    flex:0 0 auto;
+  }
+  .contain-box .word-input{
+    flex:1;
+    background:transparent;
+    border:none;
+    color:var(--text);
+    font-size:0.9rem;
+    outline:none;
+    min-width:120px;
+  }
+  .contain-box .lbl{
+    font-size:0.85rem;
+    color:var(--text);
+    white-space:nowrap;
+  }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  button.primary{
+    background:var(--accent);
+    color:#06261f;
+    border:none;
+    padding:10px 18px;
+    border-radius:7px;
+    font-weight:700;
+    font-size:0.9rem;
+    cursor:pointer;
+  }
+  button.primary:hover{ filter:brightness(1.08); }
+  button.secondary{
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--border);
+    padding:10px 16px;
+    border-radius:7px;
+    font-size:0.9rem;
+    cursor:pointer;
+  }
+  button.secondary:hover{ border-color:var(--accent-2); }
+
+  .add-attr{
+    background:transparent;
+    border:1px dashed var(--border);
+    color:var(--muted);
+    border-radius:7px;
+    padding:7px 12px;
+    font-size:0.82rem;
+    cursor:pointer;
+    align-self:flex-start;
+  }
+  .add-attr:hover{ color:var(--accent-2); border-color:var(--accent-2); }
+
+  .output-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .output-head h2{
+    font-size:0.95rem;
+    margin:0;
+    color:var(--text);
+  }
+  .count{
+    font-size:0.78rem;
+    color:var(--muted);
+    font-family:var(--mono);
+  }
+  pre#output{
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:14px;
+    font-family:var(--mono);
+    font-size:0.85rem;
+    line-height:1.55;
+    overflow-x:auto;
+    white-space:pre;
+    margin:0;
+    min-height:80px;
+    max-height:420px;
+  }
+  .tag-name{ color:var(--accent-2); }
+  .attr-name{ color:#fbbf24; }
+  .attr-val{ color:var(--accent); }
+
+  .copied-msg{
+    font-size:0.8rem;
+    color:var(--accent);
+    opacity:0;
+    transition:opacity .2s;
+  }
+  .copied-msg.show{ opacity:1; }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:0.78rem;
+    margin-top:24px;
+  }
+
+  .theme-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .swatches{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .swatch{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    border:2px solid transparent;
+    cursor:pointer;
+    position:relative;
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1), border-color .25s ease, box-shadow .25s ease;
+    padding:0;
+  }
+  .swatch:hover{ transform:scale(1.18); }
+  .swatch.active{
+    border-color:var(--text);
+    box-shadow:0 0 0 3px var(--bg), 0 0 0 4px var(--text);
+    animation:popIn .3s ease;
+  }
+  .swatch[data-color="midnight"]{ background:linear-gradient(135deg,#5eead4,#7dd3fc); }
+  .swatch[data-color="ocean"]{ background:linear-gradient(135deg,#38bdf8,#22d3ee); }
+  .swatch[data-color="sunset"]{ background:linear-gradient(135deg,#fb923c,#f87171); }
+  .swatch[data-color="forest"]{ background:linear-gradient(135deg,#4ade80,#a3e635); }
+  .swatch[data-color="candy"]{ background:linear-gradient(135deg,#e879f9,#a78bfa); }
+  .swatch[data-color="paper"]{ background:linear-gradient(135deg,#b45309,#0e7490); }
+
+  .mode-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 14px 6px 6px;
+    cursor:pointer;
+    font-size:0.82rem;
+    color:var(--text);
+  }
+  .mode-toggle .dot{
+    width:22px; height:22px;
+    border-radius:50%;
+    background:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.8rem;
+  }
+  .mode-toggle .dot.spin{ animation:spinSwap .5s ease; }
+  .mode-toggle:hover{ border-color:var(--accent-2); }
+</style>
+</head>
+<body>
+<div class="blob blob-a"></div>
+<div class="blob blob-b"></div>
+<div class="wrap">
+  <div class="theme-bar">
+    <div class="swatches" id="swatches">
+      <button class="swatch active" data-color="midnight" title="Midnight" aria-label="Midnight theme"></button>
+      <button class="swatch" data-color="ocean" title="Ocean" aria-label="Ocean theme"></button>
+      <button class="swatch" data-color="sunset" title="Sunset" aria-label="Sunset theme"></button>
+      <button class="swatch" data-color="forest" title="Forest" aria-label="Forest theme"></button>
+      <button class="swatch" data-color="candy" title="Candy" aria-label="Candy theme"></button>
+      <button class="swatch" data-color="paper" title="Paper" aria-label="Paper (light) theme"></button>
+    </div>
+    <button class="mode-toggle" id="modeToggle" type="button">
+      <span class="dot" id="modeDot">🌙</span>
+      <span id="modeLabel">Dark mode</span>
+    </button>
+  </div>
+  <header>
+    <h1>HTML Code Generator</h1>
+    <p>Pick a default tag, paste your lines of text, optionally attach attributes, and filter which lines get wrapped using the "contains word" option.</p>
+  </header>
+
+  <div class="panel">
+    <div class="row">
+      <div class="field" style="flex:0 0 200px;">
+        <label for="tagSelect">Tag</label>
+        <select id="tagSelect">
+          <optgroup label="Text">
+            <option value="p" selected>p</option>
+            <option value="span">span</option>
+            <option value="div">div</option>
+            <option value="h1">h1</option>
+            <option value="h2">h2</option>
+            <option value="h3">h3</option>
+            <option value="h4">h4</option>
+            <option value="strong">strong</option>
+            <option value="em">em</option>
+            <option value="small">small</option>
+            <option value="blockquote">blockquote</option>
+            <option value="code">code</option>
+          </optgroup>
+          <optgroup label="Lists">
+            <option value="li">li</option>
+          </optgroup>
+          <optgroup label="Links & media">
+            <option value="a">a</option>
+            <option value="button">button</option>
+            <option value="label">label</option>
+          </optgroup>
+          <optgroup label="Table">
+            <option value="td">td</option>
+            <option value="th">th</option>
+            <option value="tr">tr</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="field" style="flex:0 0 160px;">
+        <label for="wrapList">Wrap whole block in</label>
+        <select id="wrapList">
+          <option value="none">Nothing (plain lines)</option>
+          <option value="ul">ul</option>
+          <option value="ol">ol</option>
+          <option value="div">div</option>
+        </select>
+      </div>
+
+      <div class="field" style="flex:0 0 130px;">
+        <label for="indent">Indent</label>
+        <select id="indent">
+          <option value="2" selected>2 spaces</option>
+          <option value="4">4 spaces</option>
+          <option value="tab">Tab</option>
+          <option value="0">None</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:16px;">
+      <label>Attributes (optional, applied to every generated tag)</label>
+      <div id="attrList"></div>
+      <button type="button" class="add-attr" id="addAttr">+ Add attribute</button>
+    </div>
+
+    <div class="field" style="margin-bottom:16px;">
+      <label class="lbl" for="wordFilter">Contains word</label>
+      <div class="contain-box">
+        <input type="checkbox" id="containToggle">
+        <span class="lbl">Only wrap lines containing:</span>
+        <input type="text" class="word-input" id="wordFilter" placeholder="e.g. important" disabled>
+        <label class="lbl" style="display:flex; align-items:center; gap:5px; margin-left:auto;">
+          <input type="checkbox" id="caseSensitive" style="width:14px;height:14px;">
+          case-sensitive
+        </label>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:16px;">
+      <label class="lbl" for="hiddenSymbol">Hidden symbols</label>
+      <div class="contain-box">
+        <input type="checkbox" id="hiddenToggle">
+        <span class="lbl">Insert invisible characters into the output:</span>
+        <select id="hiddenSymbol" disabled>
+          <option value="200B">Zero-width space</option>
+          <option value="200C">Zero-width non-joiner</option>
+          <option value="200D">Zero-width joiner</option>
+          <option value="2060">Word joiner</option>
+        </select>
+        <select id="hiddenPlacement" disabled>
+          <option value="start">At start of each line</option>
+          <option value="end">At end of each line</option>
+          <option value="between">Between every word</option>
+        </select>
+      </div>
+      <span style="font-size:0.76rem; color:var(--muted);">These characters exist in the generated HTML source but are not visible when the page renders — nothing shows up on screen.</span>
+    </div>
+
+    <div class="field" style="margin-bottom:0;">
+      <label for="sourceText">Source text (one line = one element)</label>
+      <textarea id="sourceText" placeholder="Type or paste lines here, one per element...&#10;Example:&#10;This is important news&#10;Just a regular line&#10;Another important update"></textarea>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="actions">
+      <button class="primary" id="generateBtn">Generate HTML</button>
+      <button class="secondary" id="copyBtn">Copy code</button>
+      <button class="secondary" id="clearBtn">Clear</button>
+      <span class="copied-msg" id="copiedMsg">Copied!</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="output-head">
+      <h2>Generated code</h2>
+      <span class="count" id="lineCount">0 elements generated</span>
+    </div>
+    <pre id="output">&lt;!-- Your generated HTML will appear here --&gt;</pre>
+  </div>
+
+  <footer>Runs entirely in your browser — nothing is uploaded.</footer>
+</div>
+
+<script>
+(function(){
+  const tagSelect = document.getElementById('tagSelect');
+  const wrapList = document.getElementById('wrapList');
+  const indentSel = document.getElementById('indent');
+  const attrList = document.getElementById('attrList');
+  const addAttrBtn = document.getElementById('addAttr');
+  const containToggle = document.getElementById('containToggle');
+  const wordFilter = document.getElementById('wordFilter');
+  const caseSensitive = document.getElementById('caseSensitive');
+  const hiddenToggle = document.getElementById('hiddenToggle');
+  const hiddenSymbol = document.getElementById('hiddenSymbol');
+  const hiddenPlacement = document.getElementById('hiddenPlacement');
+  const sourceText = document.getElementById('sourceText');
+  const generateBtn = document.getElementById('generateBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const output = document.getElementById('output');
+  const lineCount = document.getElementById('lineCount');
+  const copiedMsg = document.getElementById('copiedMsg');
+
+  const VOID_TAGS = new Set(['img','br','hr','input','meta','link']);
+
+  function escapeHtml(str){
+    return str
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function addAttrRow(name, value){
+    const row = document.createElement('div');
+    row.className = 'attr-row';
+    row.innerHTML = `
+      <input type="text" class="attr-name-input" placeholder="attribute (e.g. class)" value="${name || ''}">
+      <input type="text" class="attr-val-input" placeholder="value (e.g. note)" value="${value || ''}">
+      <button type="button" class="icon-btn" title="Remove">&times;</button>
+    `;
+    row.querySelector('.icon-btn').addEventListener('click', () => row.remove());
+    attrList.appendChild(row);
+  }
+  addAttrBtn.addEventListener('click', () => addAttrRow('', ''));
+  // start with one empty row for convenience
+  addAttrRow('class', '');
+
+  containToggle.addEventListener('change', () => {
+    wordFilter.disabled = !containToggle.checked;
+    if (containToggle.checked) wordFilter.focus();
+  });
+
+  hiddenToggle.addEventListener('change', () => {
+    hiddenSymbol.disabled = !hiddenToggle.checked;
+    hiddenPlacement.disabled = !hiddenToggle.checked;
+  });
+
+  function insertHiddenChars(text, codepoint, placement){
+    const ch = String.fromCodePoint(parseInt(codepoint, 16));
+    if (placement === 'start') return ch + text;
+    if (placement === 'end') return text + ch;
+    if (placement === 'between') return text.split(' ').join(ch + ' ');
+    return text;
+  }
+
+  function getIndentStr(){
+    const v = indentSel.value;
+    if (v === 'tab') return '\t';
+    if (v === '0') return '';
+    return ' '.repeat(parseInt(v, 10));
+  }
+
+  function collectAttrs(){
+    const rows = attrList.querySelectorAll('.attr-row');
+    const attrs = [];
+    rows.forEach(r => {
+      const n = r.querySelector('.attr-name-input').value.trim();
+      const v = r.querySelector('.attr-val-input').value;
+      if (n) attrs.push({ name: n, value: v });
+    });
+    return attrs;
+  }
+
+  function attrsToString(attrs){
+    if (!attrs.length) return '';
+    return ' ' + attrs.map(a => `${a.name}="${escapeHtml(a.value)}"`).join(' ');
+  }
+
+  function buildTag(tag, content, attrs){
+    const attrStr = attrsToString(attrs);
+    if (VOID_TAGS.has(tag)) {
+      return `<${tag}${attrStr}>`;
+    }
+    return `<${tag}${attrStr}>${escapeHtml(content)}</${tag}>`;
+  }
+
+  function highlightHtml(codeLine){
+    // simple syntax highlight for display: tag name, attr names, attr values
+    return codeLine
+      .replace(/(&lt;\/?)([a-zA-Z0-9]+)/g, '$1<span class="tag-name">$2</span>')
+      .replace(/([a-zA-Z-]+)(=)(&quot;.*?&quot;)/g, '<span class="attr-name">$1</span>$2<span class="attr-val">$3</span>');
+  }
+
+  function generate(){
+    const tag = tagSelect.value;
+    const attrs = collectAttrs();
+    const indent = getIndentStr();
+    const wrapTag = wrapList.value;
+    const filterOn = containToggle.checked;
+    const word = wordFilter.value;
+    const cs = caseSensitive.checked;
+
+    const lines = sourceText.value.split('\n').filter(l => l.trim().length > 0);
+
+    let kept = lines;
+    if (filterOn && word.trim().length > 0) {
+      kept = lines.filter(l => {
+        if (cs) return l.includes(word);
+        return l.toLowerCase().includes(word.toLowerCase());
+      });
+    }
+
+    const useHidden = hiddenToggle.checked;
+    const hiddenCode = hiddenSymbol.value;
+    const hiddenPlace = hiddenPlacement.value;
+
+    const baseIndent = wrapTag !== 'none' ? indent : '';
+    const generatedLines = kept.map(l => {
+      let content = l.trim();
+      if (useHidden) content = insertHiddenChars(content, hiddenCode, hiddenPlace);
+      return baseIndent + buildTag(tag, content, attrs);
+    });
+
+    let codeText;
+    if (wrapTag === 'none') {
+      codeText = generatedLines.join('\n');
+    } else {
+      codeText = `<${wrapTag}>\n${generatedLines.join('\n')}\n</${wrapTag}>`;
+    }
+
+    if (!codeText.trim()) {
+      codeText = '<!-- No lines matched. Add source text, or check your "contains word" filter. -->';
+      output.innerHTML = escapeHtml(codeText);
+      lineCount.textContent = '0 elements generated';
+      return;
+    }
+
+    // Escape then highlight for display, but keep a plain copy for clipboard
+    output.dataset.plain = codeText;
+    const escaped = escapeHtml(codeText);
+    output.innerHTML = highlightHtml(escaped);
+    lineCount.textContent = `${kept.length} element${kept.length === 1 ? '' : 's'} generated`;
+  }
+
+  generateBtn.addEventListener('click', generate);
+  [tagSelect, wrapList, indentSel, containToggle, wordFilter, caseSensitive, hiddenToggle, hiddenSymbol, hiddenPlacement].forEach(el => {
+    el.addEventListener('change', generate);
+  });
+  wordFilter.addEventListener('input', generate);
+  sourceText.addEventListener('input', generate);
+  attrList.addEventListener('input', generate);
+
+  copyBtn.addEventListener('click', () => {
+    const text = output.dataset.plain || output.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      copiedMsg.classList.add('show');
+      setTimeout(() => copiedMsg.classList.remove('show'), 1400);
+    }).catch(() => {
+      copiedMsg.textContent = 'Copy failed — select manually';
+      copiedMsg.classList.add('show');
+      setTimeout(() => { copiedMsg.classList.remove('show'); copiedMsg.textContent = 'Copied!'; }, 1800);
+    });
+  });
+
+  clearBtn.addEventListener('click', () => {
+    sourceText.value = '';
+    wordFilter.value = '';
+    containToggle.checked = false;
+    wordFilter.disabled = true;
+    hiddenToggle.checked = false;
+    hiddenSymbol.disabled = true;
+    hiddenPlacement.disabled = true;
+    generate();
+  });
+
+  // seed with example content
+  sourceText.value = 'This is important news\nJust a regular line\nAnother important update\nNothing special here';
+  generate();
+
+  // ---- theme switcher ----
+  const root = document.documentElement;
+  const swatches = document.querySelectorAll('.swatch');
+  const modeToggle = document.getElementById('modeToggle');
+  const modeDot = document.getElementById('modeDot');
+  const modeLabel = document.getElementById('modeLabel');
+  let lastDarkColor = 'midnight';
+
+  function applyColor(color){
+    root.setAttribute('data-color', color);
+    swatches.forEach(s => s.classList.toggle('active', s.dataset.color === color));
+    const isLight = (color === 'paper');
+    modeDot.textContent = isLight ? '☀️' : '🌙';
+    modeLabel.textContent = isLight ? 'Light mode' : 'Dark mode';
+    if (!isLight) lastDarkColor = color;
+    try { localStorage.setItem('htmlgen-color', color); } catch(e) {}
+  }
+
+  swatches.forEach(s => {
+    s.addEventListener('click', () => {
+      applyColor(s.dataset.color);
+      modeDot.classList.remove('spin');
+      void modeDot.offsetWidth;
+      modeDot.classList.add('spin');
+    });
+  });
+
+  modeToggle.addEventListener('click', () => {
+    const current = root.getAttribute('data-color');
+    const next = current === 'paper' ? lastDarkColor : 'paper';
+    applyColor(next);
+    modeDot.classList.remove('spin');
+    void modeDot.offsetWidth;
+    modeDot.classList.add('spin');
+  });
+
+  // restore saved preference, if any
+  try {
+    const saved = localStorage.getItem('htmlgen-color');
+    if (saved) applyColor(saved);
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
